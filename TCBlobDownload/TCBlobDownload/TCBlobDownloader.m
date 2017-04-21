@@ -225,7 +225,7 @@ NSString * const TCBlobDownloadErrorHTTPStatusKey = @"TCBlobDownloadErrorHTTPSta
     }
 
     if (!error) {
-        [self.receivedDataBuffer setData:nil];
+        [self.receivedDataBuffer setData:[NSData data]];
 
         dispatch_async(dispatch_get_main_queue(), ^{
             if (self.firstResponseBlock) {
@@ -252,8 +252,18 @@ NSString * const TCBlobDownloadErrorHTTPStatusKey = @"TCBlobDownloadErrorHTTPSta
           (long) self.receivedDataLength, (long) self.expectedDataLength);
 
     if (self.receivedDataBuffer.length > kBufferSize && [self isExecuting]) {
-        [self.file writeData:self.receivedDataBuffer];
-        [self.receivedDataBuffer setData:nil];
+        @try {
+            [self.file writeData:self.receivedDataBuffer];
+        } @catch (NSException *exception) {
+            [self cancel];
+            NSError *error = [NSError errorWithDomain:TCBlobDownloadErrorDomain
+                                                 code:TCBlobDownloadErrorFileHandleError
+                                             userInfo:@{}];
+            [self notifyFromCompletionWithError:error pathToFile:self.pathToFile];
+            [self.receivedDataBuffer setData:[NSData data]];
+            return;
+        }
+        [self.receivedDataBuffer setData:[NSData data]];
     }
 
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -272,10 +282,18 @@ NSString * const TCBlobDownloadErrorHTTPStatusKey = @"TCBlobDownloadErrorHTTPSta
 - (void)connectionDidFinishLoading:(NSURLConnection*)connection
 {
     if ([self isExecuting]) {
-        [self.file writeData:self.receivedDataBuffer];
-        [self.receivedDataBuffer setData:nil];
+        NSError *error = nil;
+        @try {
+            [self.file writeData:self.receivedDataBuffer];
+        } @catch (NSException *exception) {
+            [self cancel];
+            error = [NSError errorWithDomain:TCBlobDownloadErrorDomain
+                                        code:TCBlobDownloadErrorFileHandleError
+                                    userInfo:@{}];
+        }
+        [self.receivedDataBuffer setData:[NSData data]];
         
-        [self notifyFromCompletionWithError:nil pathToFile:self.pathToFile];
+        [self notifyFromCompletionWithError:error pathToFile:self.pathToFile];
     }
 }
 

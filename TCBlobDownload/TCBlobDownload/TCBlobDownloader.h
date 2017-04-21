@@ -41,7 +41,8 @@ typedef NS_ENUM(NSUInteger, TCBlobDownloadError) {
     /** The connection encountered an HTTP error. Please refer to `TCHTTPStatusCode` documentation for further details on how to handle such errors. */
     TCBlobDownloadErrorHTTPError,
     /** The device has not enough free disk space to download the file. */
-    TCBlobDownloadErrorNotEnoughFreeDiskSpace
+    TCBlobDownloadErrorNotEnoughFreeDiskSpace,
+    TCBlobDownloadErrorFileHandleError
 };
 
 /**
